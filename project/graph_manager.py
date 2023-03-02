@@ -5,14 +5,16 @@ import networkx
 
 
 def get_graf_information_by_name(name: str):
-    graph = cfpq_data.graph_from_csv(
-        cfpq_data.download(name)
-    )  # get path graph by name, then get graph
+    graph = get_graph_by_name(name)
     return (
         graph.number_of_nodes(),
         graph.number_of_edges(),
         cfpq_data.get_sorted_labels(graph),
     )
+
+
+def get_graph_by_name(name: str):
+    return cfpq_data.graph_from_csv(cfpq_data.download(name))
 
 
 def create_graph_by_number_vertices_in_loops_and_label_names_and_save_in_file(
