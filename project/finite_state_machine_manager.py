@@ -3,7 +3,7 @@ from pyformlang.finite_automaton import EpsilonNFA
 
 
 def create_dfsm_by_regular_expression(regular: str):
-    return Regex(regular).to_epsilon_nfa().to_deterministic().minimize()
+    return Regex(regular).to_epsilon_nfa().minimize()
 
 
 # nondeterministic finite state machine
