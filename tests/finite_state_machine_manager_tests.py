@@ -21,3 +21,42 @@ def create_ndfsm_by_graph_test():
     assert not graph.accepts(["bb"])
     assert not graph.accepts(["ba"])
     assert not graph.accepts(["sdfsd"])
+
+
+def ap_rpq_test():
+    assert ap_rpq(
+        cfpq_data.labeled_two_cycles_graph(2, 3, labels=("a", "b")),
+        "a|bb",
+        {0},
+        {1, 2, 3},
+    ) == [(0, 1)]
+    assert ap_rpq(
+        cfpq_data.labeled_two_cycles_graph(2, 3, labels=("a", "b")),
+        "a|b|c",
+        {0},
+        {1, 2, 3},
+    ) == [(0, 1), (0, 3)]
+    assert (
+        ap_rpq(
+            cfpq_data.labeled_two_cycles_graph(2, 3, labels=("a", "b")),
+            "dsa",
+            {0},
+            {1, 2, 3},
+        )
+        == []
+    )
+    assert ap_rpq(
+        cfpq_data.labeled_two_cycles_graph(2, 3, labels=("ac", "b")),
+        "(ac|bc)|ac",
+        {0},
+        {1},
+    ) == [(0, 1)]
+    assert (
+        ap_rpq(
+            cfpq_data.labeled_two_cycles_graph(2, 3, labels=("ac", "b")),
+            "(ac|bc)|ac",
+            {0},
+            {2, 3},
+        )
+        == []
+    )
