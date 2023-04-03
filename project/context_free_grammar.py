@@ -11,13 +11,14 @@ def cfg_into_weak_cnf(cfg, start_symbol=Variable("S")) -> CFG:
     """
     if isinstance(cfg, str):
         cfg = get_cfg_from_text(cfg, start_symbol)
+    start_symbol = cfg.start_symbol
     cfg = (
         cfg.remove_useless_symbols()
         .eliminate_unit_productions()
         .remove_useless_symbols()
     )
     cfg = cfg._decompose_productions(cfg._get_productions_with_only_single_terminals())
-    return CFG(start_symbol=cfg.start_symbol, productions=set(cfg))
+    return CFG(start_symbol=start_symbol, productions=set(cfg))
 
 
 def get_cfg_from_text(cfg: str, start_symbol=Variable("S")) -> CFG:
