@@ -13,8 +13,7 @@ def cfg_into_weak_cnf(cfg, start_symbol=Variable("S")) -> CFG:
         cfg = get_cfg_from_text(cfg, start_symbol)
     start_symbol = cfg.start_symbol
     cfg = (
-        cfg.remove_useless_symbols()
-        .eliminate_unit_productions()
+        cfg.eliminate_unit_productions()
         .remove_useless_symbols()
     )
     cfg = cfg._decompose_productions(cfg._get_productions_with_only_single_terminals())
