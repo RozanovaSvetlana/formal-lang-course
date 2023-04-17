@@ -46,6 +46,14 @@ def get_cfg_from_file(file_name: str, start_symbol=Variable("S")) -> CFG:
 
 
 def hellinges(graph: MultiDiGraph, cfg: CFG):
+    """
+        Finds paths in the graph between vertices according
+        to the conditions of grammar with the help
+        of the Hellings algorithm
+    :param graph: the graph representation of the automaton
+    :param cfg: context-free grammar as object
+    :return: a set of triples of a species (non-terminus, vertex, vertex).
+    """
     cfg = cfg_into_weak_cnf(cfg)
     r = {(nt, v, v) for v in graph.nodes
          for nt in {i.head.value
@@ -73,5 +81,20 @@ def hellinges(graph: MultiDiGraph, cfg: CFG):
     return r
 
 
-def get_reachable_vertices_with_hellings(start_vertex, end_vertex):
-    pass
+def context_free_path_queruing_by_hellinges(graph: MultiDiGraph, cfg: CFG, start_vertex=None, end_vertex=None,
+                                         start_symbol=Variable("S")):
+    """
+        Based on the Hellings algorithm solves the reachability problem
+    :param graph: the graph representation of the automaton
+    :param cfg: context-free grammar as object
+    :param start_vertex: the vertices that are the starting values of the automaton
+    :param end_vertex: the vertices that are finite values of the automaton
+    :param start_symbol: start symbol, S by default
+    :return:
+    """
+    if start_vertex is None:
+        start_vertex = graph.nodes
+    if end_vertex is None:
+        end_vertex = graph.nodes
+    return {(v, u) for (nt, v, u) in hellinges(graph, cfg)
+            if v in start_vertex and u in end_vertex and nt == start_symbol}
