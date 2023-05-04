@@ -59,7 +59,7 @@ def hellinges(graph: MultiDiGraph, cfg: CFG):
          for nt in {i.head.value
                     for i in cfg.productions
                     if not i.body}} | \
-        {(nt.head.value, v, u) for (v, u, t) in graph.edges(data=True)
+        {(nt.head.value, v, u) for (v, u, t) in graph.edges(data="label")
          for nt in {i for i in cfg.productions if len(i.body) == 1}
          if nt.body[0].value == t}
     m = r.copy()
@@ -74,7 +74,7 @@ def hellinges(graph: MultiDiGraph, cfg: CFG):
                 r |= {trio}
         for (ntj, _, us) in {i for i in r if i[1] == u}:
             for trio in {(i.head.value, v, us) for i in nt if (i.head.value, v, us) not in r
-                                                              and i.bode[0].value == nti
+                                                              and i.body[0].value == nti
                                                               and i.body[1].value == ntj}:
                 m |= {trio}
                 r |= {trio}
