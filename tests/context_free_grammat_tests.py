@@ -44,11 +44,26 @@ def context_free_path_queruing_by_hellinges_test_fst():
 def context_free_path_queruing_by_hellinges_test_snd():
     graph = cfpq_data.labeled_two_cycles_graph(2, 1, labels=("a", "b"))
     cfg = CFG.from_text("S -> a S | P\nP -> b P | b")
-    assert context_free_path_queruing_by_hellinges(graph, cfg) == {(0, 0), (0, 3), (2, 0), (3, 0), (2, 3), (3, 3),
-                                                                   (1, 0), (1, 3)}
+    assert context_free_path_queruing_by_hellinges(graph, cfg) == {
+        (0, 0),
+        (0, 3),
+        (2, 0),
+        (3, 0),
+        (2, 3),
+        (3, 3),
+        (1, 0),
+        (1, 3),
+    }
 
 
 def context_free_path_queruing_by_hellinges_test_thrd():
     graph = cfpq_data.labeled_two_cycles_graph(2, 3, labels=("a", "b"))
     cfg = CFG.from_text("S -> ( S ) S\nS -> S ( S )\nS -> epsilon")
-    assert context_free_path_queruing_by_hellinges(graph, cfg) == {(4, 4), (5, 5), (0, 0), (1, 1), (3, 3), (2, 2)}
+    assert context_free_path_queruing_by_hellinges(graph, cfg) == {
+        (4, 4),
+        (5, 5),
+        (0, 0),
+        (1, 1),
+        (3, 3),
+        (2, 2),
+    }
