@@ -3,7 +3,11 @@ from pyformlang.cfg import Variable
 from pyformlang.regular_expression import Regex
 
 from project.ecfg import ECFG
-from project.context_free_grammar import cfg_into_weak_cnf, get_cfg_from_text, get_cfg_from_file
+from project.context_free_grammar import (
+    cfg_into_weak_cnf,
+    get_cfg_from_text,
+    get_cfg_from_file,
+)
 from project.rsm import RSM
 
 
@@ -11,8 +15,8 @@ from project.rsm import RSM
     "cfg",
     [
         "S -> A B \nA B -> B C B A \n B C -> A \n A -> epsilon",
-        "S -> epsilon \n S -> Ba \n B -> aaS\n B -> a"
-    ]
+        "S -> epsilon \n S -> Ba \n B -> aaS\n B -> a",
+    ],
 )
 def test_from_cfg(cfg):
     weak_cfg = cfg_into_weak_cnf(get_cfg_from_text(cfg))
@@ -23,12 +27,14 @@ def test_from_cfg(cfg):
 
 
 def test_from_string():
-    ecfg = ECFG().from_string("S -> A\n S -> ab\n S -> epsilon\n A -> B \n B -> S\n B -> epsilon")
+    ecfg = ECFG().from_string(
+        "S -> A\n S -> ab\n S -> epsilon\n A -> B \n B -> S\n B -> epsilon"
+    )
     productions = {
-                    Variable("S"): Regex("A | ab | epsilon"),
-                    Variable("B"): Regex("S | epsilon"),
-                    Variable("A"): Regex("B"),
-                }
+        Variable("S"): Regex("A | ab | epsilon"),
+        Variable("B"): Regex("S | epsilon"),
+        Variable("A"): Regex("B"),
+    }
     for head, body in ecfg.productions.items():
         expected = productions[head]
         assert body.to_epsilon_nfa().is_equivalent_to(expected.to_epsilon_nfa())
@@ -38,35 +44,43 @@ def test_from_string():
     "file, productions",
     [
         (
-                "tests/files_for_tests/simple-ecfg",
-                {
-                    Variable("S"): Regex("B | a*b | epsilon"),
-                    Variable("C"): Regex("S S"),
-                    Variable("B"): Regex("C"),
-                }
+            "tests/files_for_tests/simple-ecfg",
+            {
+                Variable("S"): Regex("B | a*b | epsilon"),
+                Variable("C"): Regex("S S"),
+                Variable("B"): Regex("C"),
+            },
         ),
         (
-                "tests/files_for_tests/example_ecfg",
-                {
-                    Variable("S"): Regex("S A"),
-                    Variable("A"): Regex("a | B"),
-                    Variable("B"): Regex("C | epsilon"),
-                    Variable("C"): Regex("c"),
-                }
-        )
-    ]
+            "tests/files_for_tests/example_ecfg",
+            {
+                Variable("S"): Regex("S A"),
+                Variable("A"): Regex("a | B"),
+                Variable("B"): Regex("C | epsilon"),
+                Variable("C"): Regex("c"),
+            },
+        ),
+    ],
 )
 def test_from_file(file, productions):
     ecfg = ECFG().from_file(file)
     for head, body in ecfg.productions.items():
-        assert body.to_epsilon_nfa().is_equivalent_to(productions[head].to_epsilon_nfa())
+        assert body.to_epsilon_nfa().is_equivalent_to(
+            productions[head].to_epsilon_nfa()
+        )
 
 
 @pytest.mark.parametrize(
     "s, expected",
     [
-        ("S -> A\n S -> ab\n S -> epsilon\n A -> B \n B -> S\n B -> epsilon", "tests/files_for_tests/simple_ecfg_result"),
-        ("S -> AaA\nA -> b | B | b\nB -> S\nB -> epsilon\n", "tests/files_for_tests/simple_ecfg_result_2")
+        (
+            "S -> A\n S -> ab\n S -> epsilon\n A -> B \n B -> S\n B -> epsilon",
+            "tests/files_for_tests/simple_ecfg_result",
+        ),
+        (
+            "S -> AaA\nA -> b | B | b\nB -> S\nB -> epsilon\n",
+            "tests/files_for_tests/simple_ecfg_result_2",
+        ),
     ],
 )
 def test_minimize(s, expected):
@@ -82,8 +96,14 @@ def test_minimize(s, expected):
 @pytest.mark.parametrize(
     "ecfg, expected",
     [
-        ("S -> A\n S -> ab\n S -> epsilon\n A -> B \n B -> S\n B -> epsilon", "tests/files_for_tests/simple_ecfg_result"),
-        ("S -> AaA\nA -> b | B | b\nB -> S\nB -> epsilon\n", "tests/files_for_tests/simple_ecfg_result_2"),
+        (
+            "S -> A\n S -> ab\n S -> epsilon\n A -> B \n B -> S\n B -> epsilon",
+            "tests/files_for_tests/simple_ecfg_result",
+        ),
+        (
+            "S -> AaA\nA -> b | B | b\nB -> S\nB -> epsilon\n",
+            "tests/files_for_tests/simple_ecfg_result_2",
+        ),
     ],
 )
 def test_from_ecfg(ecfg, expected):

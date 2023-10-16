@@ -8,6 +8,7 @@ class ECFG:
     """
     Extended Context-Free Grammars
     """
+
     def __init__(self):
         self.productions = None
         self.vars = None
@@ -26,10 +27,16 @@ class ECFG:
         self.productions = dict()
 
         for production in cfg.productions:
-            body = Regex("$") if len(production.body) == 0 else Regex(
-                "".join(" " + pr_body.value for pr_body in production.body))
-            self.productions[production.head] = self.productions.get(production.head).union(
-                body) if production.head in self.productions else body
+            body = (
+                Regex("$")
+                if len(production.body) == 0
+                else Regex("".join(" " + pr_body.value for pr_body in production.body))
+            )
+            self.productions[production.head] = (
+                self.productions.get(production.head).union(body)
+                if production.head in self.productions
+                else body
+            )
         return self
 
     def from_string(self, s):
