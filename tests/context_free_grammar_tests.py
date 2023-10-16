@@ -1,10 +1,11 @@
 import cfpq_data
 import pytest
 
+from project import cfpq
 from project.context_free_grammar import *
 
 
-def cfg_into_weak_cnf_test():
+def test_cfg_into_weak_cnf():
     check_is_cfg_equals(
         cfg_into_weak_cnf("S -> a d\nB -> C\n C -> d\nC -> d"),
         get_cfg_from_text('S -> "VAR:a#CNF#" "VAR:d#CNF#"\nd#CNF# -> d\na#CNF# -> a\n'),
@@ -15,15 +16,15 @@ def cfg_into_weak_cnf_test():
     )
 
 
-def get_cfg_from_file_test():
+def test_get_cfg_from_file():
     # error path
     with pytest.raises(OSError):
         get_cfg_from_file("error_path")
     check_is_cfg_equals(
-        get_cfg_from_file("files_for_tests\simple_cfg.txt"), get_cfg_from_text("S -> a")
+        get_cfg_from_file("tests/files_for_tests/simple_cfg.txt"), get_cfg_from_text("S -> a")
     )
     check_is_cfg_equals(
-        get_cfg_from_file("files_for_tests\some_cfg.txt"),
+        get_cfg_from_file("tests/files_for_tests/some_cfg.txt"),
         get_cfg_from_text("S -> A B C D E\nA -> a\nB -> b\nC -> c\nD -> d\nE -> e"),
     )
 
@@ -35,35 +36,20 @@ def check_is_cfg_equals(cfg_actual: CFG, cfg_expected: CFG):
     assert cfg_actual.variables == cfg_expected.variables
 
 
-def context_free_path_queruing_by_hellinges_test_fst():
+def test_context_free_path_queruing_by_hellinges_1():
     graph = cfpq_data.labeled_two_cycles_graph(2, 1, labels=("a", "b"))
     cfg = CFG.from_text("S -> a b")
-    assert context_free_path_queruing_by_hellinges(graph, cfg) == {(2, 3)}
+    assert cfpq.hellings(graph, cfg) == {(2, 3)}
 
 
-def context_free_path_queruing_by_hellinges_test_snd():
+def test_context_free_path_queruing_by_hellinges_2():
     graph = cfpq_data.labeled_two_cycles_graph(2, 1, labels=("a", "b"))
     cfg = CFG.from_text("S -> a S | P\nP -> b P | b")
-    assert context_free_path_queruing_by_hellinges(graph, cfg) == {
-        (0, 0),
-        (0, 3),
-        (2, 0),
-        (3, 0),
-        (2, 3),
-        (3, 3),
-        (1, 0),
-        (1, 3),
-    }
+    assert cfpq.hellings(graph, cfg) == {(0, 0), (0, 3), (2, 0), (3, 0), (2, 3), (3, 3),
+                                         (1, 0), (1, 3)}
 
 
-def context_free_path_queruing_by_hellinges_test_thrd():
+def test_context_free_path_queruing_by_hellinges_3():
     graph = cfpq_data.labeled_two_cycles_graph(2, 3, labels=("a", "b"))
     cfg = CFG.from_text("S -> ( S ) S\nS -> S ( S )\nS -> epsilon")
-    assert context_free_path_queruing_by_hellinges(graph, cfg) == {
-        (4, 4),
-        (5, 5),
-        (0, 0),
-        (1, 1),
-        (3, 3),
-        (2, 2),
-    }
+    assert cfpq.hellings(graph, cfg) == {(4, 4), (5, 5), (0, 0), (1, 1), (3, 3), (2, 2)}
