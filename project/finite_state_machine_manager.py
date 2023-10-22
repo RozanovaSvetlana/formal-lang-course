@@ -1,4 +1,9 @@
+from collections import namedtuple
+
+from pyformlang.finite_automaton import State, DeterministicFiniteAutomaton, EpsilonNFA
 from pyformlang.regular_expression import Regex
+from scipy.sparse import dok_matrix, vstack
+from cfpq_data import *
 
 from project.matrix_manager import *
 
@@ -78,3 +83,163 @@ def ap_rpq(graph, regular: str, start_vertex=None, end_vertex=None):
         if start in list_start and end in list_end:
             result.append((list_start[start], list_end[end]))
     return result
+
+
+def transform(matrix, length):
+    """
+        Transforms matrix to the mathix with only ones at the main diagonal
+
+    :param matrix: front
+    :param length: count of states in the second graph
+    :return: transformed dok_matrix front
+    """
+    mathix_transformed = dok_matrix(matrix.shape, dtype=bool)
+    for x, y in zip(*matrix.nonzero()):
+        if y < length:
+            row = matrix[[x], length:]
+            if row.nnz > 0:
+                shift = x - (x % length)
+                mathix_transformed[shift + y, y] = True
+                mathix_transformed[[shift + y], length:] += row
+    return mathix_transformed
+
+
+def front_each(fst_info, snd_info):
+    """
+        Calculates front for separated each start state
+
+    :param fst_info: info about first graph
+    :param snd_info: info about second graph
+    :return: created front
+    """
+    front = None
+    for s in fst_info.start_states:
+        temp_front = dok_matrix(
+            (
+                len(snd_info.all_states),
+                len(fst_info.all_states) + len(snd_info.all_states),
+            ),
+            dtype=bool,
+        )
+        r = dok_matrix((1, len(fst_info.all_states)), dtype=bool)
+        r[0, fst_info.start_states[s]] = True
+        for state in snd_info.start_states:
+            i = snd_info.all_states[state]
+            temp_front[i, i] = True
+            temp_front[[i], len(snd_info.all_states) :] = r
+        front = temp_front if front is None else vstack([front, temp_front])
+    return front
+
+
+def front_all(fst_info, snd_info):
+    """
+        Calculates front for not separated all states
+
+    :param fst_info: info about first graph
+    :param snd_info: info about second graph
+    :return: created front
+    """
+    front = dok_matrix(
+        (
+            len(snd_info.all_states),
+            len(fst_info.all_states) + len(snd_info.all_states),
+        ),
+        dtype=bool,
+    )
+    front_right = dok_matrix((1, len(fst_info.all_states)), dtype=bool)
+    for s in fst_info.start_states:
+        front_right[0, fst_info.start_states[s]] = True
+    for s in snd_info.start_states:
+        index = snd_info.all_states[s]
+        front[index, index] = True
+        front[[index], len(snd_info.all_states) :] = front_right
+    return front
+
+
+def BFS(fst_graph_info, snd_graph_info, for_each: bool):
+    """
+        BFS to calculate direct sums, fronts (for each or for all states) and perform bfs in cycle while front is changing
+
+    :param fst_graph_info: boolean matrix, all states, final and start states for the first graph
+    :param snd_graph_info: boolean matrix, all states, final and start states for the second graph
+    :param for_each: create front for all states (false) or for each (true)
+    :return: all visited after bfs states
+    """
+    direct_sum = dict()
+    for symbol in fst_graph_info.boolean_matrix:
+        if symbol in snd_graph_info.boolean_matrix:
+            direct_sum[symbol] = sparse.bmat(
+                [
+                    [snd_graph_info.boolean_matrix[symbol], None],
+                    [None, fst_graph_info.boolean_matrix[symbol]],
+                ]
+            )
+
+    front = (
+        front_each(fst_graph_info, snd_graph_info)
+        if for_each
+        else front_all(fst_graph_info, snd_graph_info)
+    )
+    is_changed = True
+    visited = dok_matrix(front.shape, dtype=bool)
+    next = visited.nnz
+    while is_changed:
+        for key, value in direct_sum.items():
+            if front is None:
+                new_front = visited.dot(value)
+            else:
+                new_front = front.dot(value)
+            visited += transform(new_front, len(snd_graph_info.all_states))
+        is_changed = visited.nnz != next
+        front = None
+        next = visited.nnz
+    return visited
+
+
+def ms_rpq(graph, regex, start_vertex=None, end_vertex=None, for_each=True):
+    graph_fst = create_ndfsm_by_graph(graph, start_vertex, end_vertex)
+    graph_snd = create_dfsm_by_regular_expression(regex)
+
+    graph_info = namedtuple(
+        "graph_info", "boolean_matrix all_states start_states final_states"
+    )
+
+    def get_graph_info(g):
+        """
+        Return information about all states of graph, start states and final
+        :param g: graph
+        """
+        boolean_matrix = get_boolean_matrix(g)
+        all_state = {state: idx for (idx, state) in enumerate(g.states)}
+        start_states = {State(state): state.value for state in g.start_states}
+        final_states = {State(state): state.value for state in g.final_states}
+        return graph_info(boolean_matrix, all_state, start_states, final_states)
+
+    first_graph_info = get_graph_info(graph_fst)
+    second_graph_info = get_graph_info(graph_snd)
+    result = BFS(first_graph_info, second_graph_info, for_each)
+
+    answer = set()
+
+    f_all_keys = list(first_graph_info.all_states.keys())
+    s_all_keys = list(second_graph_info.all_states.keys())
+    f_all_values = list(first_graph_info.all_states.values())
+    s_all_values = list(second_graph_info.all_states.values())
+
+    for i, j in zip(*result.nonzero()):
+        if j >= len(second_graph_info.all_states):
+            i_first = j - len(second_graph_info.all_states)
+            i_second = i % len(second_graph_info.all_states)
+            x = f_all_keys[f_all_values[i_first]]
+            y = s_all_keys[s_all_values[i_second]]
+            if (
+                x in first_graph_info.final_states.keys()
+                and y in second_graph_info.final_states.keys()
+            ):
+                answer.add(
+                    (State(i // len(second_graph_info.all_states)), State(i_first))
+                    if for_each
+                    else State(i_first)
+                )
+
+    return answer

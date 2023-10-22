@@ -13,10 +13,7 @@ def cfg_into_weak_cnf(cfg, start_symbol=Variable("S")) -> CFG:
     if isinstance(cfg, str):
         cfg = get_cfg_from_text(cfg, start_symbol)
     start_symbol = cfg.start_symbol
-    cfg = (
-        cfg.eliminate_unit_productions()
-        .remove_useless_symbols()
-    )
+    cfg = cfg.eliminate_unit_productions().remove_useless_symbols()
     cfg = cfg._decompose_productions(cfg._get_productions_with_only_single_terminals())
     return CFG(start_symbol=start_symbol, productions=set(cfg))
 
@@ -55,34 +52,50 @@ def hellinges(graph: MultiDiGraph, cfg: CFG):
     :return: a set of triples of a species (non-terminus, vertex, vertex).
     """
     cfg = cfg_into_weak_cnf(cfg)
-    r = {(nt, v, v) for v in graph.nodes
-         for nt in {i.head.value
-                    for i in cfg.productions
-                    if not i.body}} | \
-        {(nt.head.value, v, u) for (v, u, t) in graph.edges(data="label")
-         for nt in {i for i in cfg.productions if len(i.body) == 1}
-         if nt.body[0].value == t}
+    r = {
+        (nt, v, v)
+        for v in graph.nodes
+        for nt in {i.head.value for i in cfg.productions if not i.body}
+    } | {
+        (nt.head.value, v, u)
+        for (v, u, t) in graph.edges(data="label")
+        for nt in {i for i in cfg.productions if len(i.body) == 1}
+        if nt.body[0].value == t
+    }
     m = r.copy()
     nt = {i for i in cfg.productions if len(i.body) == 2}
     while m:
         nti, v, u = m.pop()
         for (ntj, vs, _) in {i for i in r if i[2] == v}:
-            for trio in {(i.head.value, vs, u) for i in nt if (i.head.value, vs, u) not in r
-                                                              and i.body[0].value == ntj
-                                                              and i.body[1].value == nti}:
+            for trio in {
+                (i.head.value, vs, u)
+                for i in nt
+                if (i.head.value, vs, u) not in r
+                and i.body[0].value == ntj
+                and i.body[1].value == nti
+            }:
                 m |= {trio}
                 r |= {trio}
         for (ntj, _, us) in {i for i in r if i[1] == u}:
-            for trio in {(i.head.value, v, us) for i in nt if (i.head.value, v, us) not in r
-                                                              and i.body[0].value == nti
-                                                              and i.body[1].value == ntj}:
+            for trio in {
+                (i.head.value, v, us)
+                for i in nt
+                if (i.head.value, v, us) not in r
+                and i.body[0].value == nti
+                and i.body[1].value == ntj
+            }:
                 m |= {trio}
                 r |= {trio}
     return r
 
 
-def context_free_path_queruing_by_hellinges(graph: MultiDiGraph, cfg: CFG, start_vertex=None, end_vertex=None,
-                                         start_symbol=Variable("S")):
+def context_free_path_queruing_by_hellinges(
+    graph: MultiDiGraph,
+    cfg: CFG,
+    start_vertex=None,
+    end_vertex=None,
+    start_symbol=Variable("S"),
+):
     """
         Based on the Hellings algorithm solves the reachability problem
     :param graph: the graph representation of the automaton
@@ -96,5 +109,8 @@ def context_free_path_queruing_by_hellinges(graph: MultiDiGraph, cfg: CFG, start
         start_vertex = graph.nodes
     if end_vertex is None:
         end_vertex = graph.nodes
-    return {(v, u) for (nt, v, u) in hellinges(graph, cfg)
-            if v in start_vertex and u in end_vertex and nt == start_symbol}
+    return {
+        (v, u)
+        for (nt, v, u) in hellinges(graph, cfg)
+        if v in start_vertex and u in end_vertex and nt == start_symbol
+    }
